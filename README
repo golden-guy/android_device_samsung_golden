@@ -1,0 +1,87 @@
+#
+# Copyright (C) 2013 The Android Open Source Project
+# Copyright (C) 2014 Stefan Berger (s.berger81@gmail.com) aka golden-guy
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+* Description
+
+  This is the OmniROM repository (based on 4.4.2) for the Samsung Galaxy SIII Mini a.k.a Samsung Golden.
+  Please note: While the build is fairly feature-complete, it's still work in progress. 
+  Following this guide will give you a functional build of Omni, feel free to further enhance the code 
+  and fix issues to make Omni even better!
+  
+* How To Build OmniROM (4.4.2) for Samsung Golden
+ 
+  [for detailed steps about setting up your build env, best refer to one of the Omnirom build guides, 
+   e.g.: http://docs.omnirom.org/Build_for_i9300]
+
+  ------------------------------------------------------------------------------
+
+  # Make a new workspace
+
+  $ mkdir -p ~/omni/kk4.4
+  $ cd ~/omni/kk4.4
+
+  ------------------------------------------------------------------------------
+
+  # Do repo init, add local manifest and repo sync
+
+  $ repo init -u git://github.com/omnirom/android.git -b android-4.4
+
+  ------------------------------------------------------------------------------
+
+  # Create .repo/local_manifests/local_manifest.xml with the following content:
+
+  <?xml version="1.0" encoding="UTF-8"?>
+   <manifest>
+     <project name="golden-guy/android_device_samsung_golden" remote="github" path="device/samsung/golden" revision="android-4.4" />
+     <project name="OliverG96/android_kernel_samsung_golden" remote="github" path="kernel/samsung/golden" revision="android-4.4" />
+     <project name="OliverG96/android_vendor_samsung_golden" remote="github" path="vendor/samsung/golden" revision="android-4.4" />
+   </manifest>
+
+  $ repo sync
+
+  ------------------------------------------------------------------------------
+
+  # Pull fixes for STE OMX from TeamCanjica github repos, this script also fixes SystemUI and other build errors
+
+  $ ./device/samsung/golden/golden_pull
+
+  ------------------------------------------------------------------------------
+
+  # Setup environment
+
+  $ export USE_CCACHE=1
+  $ ./prebuilts/misc/linux-x86/ccache/ccache -M 25G
+
+  $ source build/envsetup.sh
+  $ lunch omni_golden-userdebug
+
+  ------------------------------------------------------------------------------
+
+  # Build OmniROM (4.4.2)
+
+  $ brunch omni_golden-userdebug
+
+  ------------------------------------------------------------------------------
+
+* Thanks - for both sources and support
+
+  OmniROM Team
+  Team Canjica
+  OliverG96
+  Rox (TeamCanjica)
+  Exothermic
+

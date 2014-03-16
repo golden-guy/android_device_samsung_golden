@@ -1,0 +1,18 @@
+on init
+    mkdir /efs
+    mkdir /mnt
+    mkdir /mnt/.lfs
+    mkdir /sdcard
+    mkdir /external_sd
+
+    write /sys/devices/platform/mcde_fb/graphics/fb0/bits_per_pixel 16
+
+    # USB initialization
+    write /sys/class/android_usb/android0/idVendor 04E8
+    write /sys/class/android_usb/android0/idProduct 685D
+    write /sys/class/android_usb/android0/bDeviceClass 0
+
+on early-fs
+    insmod /lib/modules/j4fs.ko
+    mount j4fs /dev/block/mmcblk0p19 /mnt/.lfs wait rw
+    insmod /lib/modules/param.ko

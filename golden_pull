@@ -1,0 +1,37 @@
+#!/bin/bash
+echo "Patching frameworks_native -> STE OMX Fix"
+cd frameworks/native
+git fetch https://github.com/TeamCanjica/omni_frameworks_native
+git cherry-pick 58bfb612bc026521d43dbb80802fd2c009b034c9
+cd ..
+echo "Patching frameworks_av -> STE Multimedia Fix"
+cd av
+git fetch https://github.com/TeamCanjica/omni_frameworks_av
+git cherry-pick 3e8e2b16811e8c060d3339869b4f85b4842c26a7
+cd ..
+echo "Patching frameworks_base -> Fix STE OMX"
+cd base
+git fetch https://github.com/TeamCanjica/android_frameworks_base
+git cherry-pick 3826055d49ec70ab3d0e130a8e444fd334806fa5
+cd ../..
+echo "Patching system_core -> STE OMX Fix + Fix shutdown/reboot bug"
+cd system/core
+git fetch https://github.com/TeamCanjica/android_system_core
+git cherry-pick 7bd81ee140c09066ede2ffab47da1a1c4e54e021
+git cherry-pick b6cb91b1f70c969bb0f818a24111c0ca055be590
+cd ../..
+# low incoming call fix - has to be applied manually!
+#cd packages/services/Telephony
+#git fetch https://github.com/TeamCanjica/android_packages_services_Telephony
+#git cherry-pick aeeaf6886ddc662260129e80850fdec8dbb10560
+#cd ../../..
+echo "Patching bootable_recovery -> fix compile issue - undefined reference to 'gr_maxExW'"
+cd bootable/recovery
+git fetch https://gerrit.omnirom.org/android_bootable_recovery refs/changes/04/5804/1 && git checkout FETCH_HEAD
+cd ../..
+# Fix SystemUI crash - add missing statusbar image
+echo "Patching SystemUI -> add missing status bar image"
+cd frameworks/base/packages/SystemUI/res
+cp drawable-xhdpi/bg_custom_header_overlay.png drawable-hdpi/
+cd ../../../../..
+exit 0
