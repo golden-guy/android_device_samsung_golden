@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2013 The Android Open Source Project
 # Copyright (C) 2013 Óliver García Albertos (oliverarafo@gmail.com)
+# Copyright (C) 2014 Stefan Berger (s.berger81@gmail.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,6 +62,7 @@ BOARD_KERNEL_PAGESIZE := 2048
 # Graphics
 USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/golden/configs/lib/egl/egl.cfg
+COMMON_GLOBAL_CFLAGS += -DFORCE_SCREENSHOT_CPU_PATH -DWORKAROUND_BUG_10194508
 BOARD_EGL_NEEDS_LEGACY_FB := true
 
 # Screen
@@ -102,7 +104,7 @@ ENABLE_WEBGL := true
 # Audio
 BOARD_USES_ALSA_AUDIO := true
 BOARD_HAVE_PRE_KITKAT_AUDIO_BLOB := true
-COMMON_GLOBAL_CFLAGS += -DMR0_AUDIO_BLOB
+COMMON_GLOBAL_CFLAGS += -DMR0_AUDIO_BLOB -DMR1_AUDIO_BLOB
 
 # Vold
 BOARD_VOLD_MAX_PARTITIONS := 25
