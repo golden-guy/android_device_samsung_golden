@@ -40,15 +40,13 @@
 
   $ repo init -u git://github.com/omnirom/android.git -b android-4.4
 
-  ------------------------------------------------------------------------------
-
   # Create .repo/local_manifests/local_manifest.xml with the following content:
 
   <?xml version="1.0" encoding="UTF-8"?>
    <manifest>
      <project name="golden-guy/android_device_samsung_golden" remote="github" path="device/samsung/golden" revision="android-4.4" />
-     <project name="OliverG96/android_kernel_samsung_golden" remote="github" path="kernel/samsung/golden" revision="android-4.4" />
-     <project name="OliverG96/android_vendor_samsung_golden" remote="github" path="vendor/samsung/golden" revision="android-4.4" />
+     <project name="golden-guy/android_kernel_samsung_golden" remote="github" path="kernel/samsung/golden" revision="android-4.4" />
+     <project name="golden-guy/android_vendor_samsung_golden" remote="github" path="vendor/samsung/golden" revision="android-4.4" />
    </manifest>
 
   $ repo sync
@@ -84,4 +82,3 @@
   OliverG96
   Rox (TeamCanjica)
   Exothermic
-
