@@ -29,7 +29,7 @@ cd ../..
 # low incoming call fix - has to be applied manually!
 #cd packages/services/Telephony
 #git fetch https://github.com/TeamCanjica/android_packages_services_Telephony
-#git cherry-pick aeeaf6886ddc662260129e80850fdec8dbb10560
+#git cherry-pick fdf281fdabe5e7517eb96f2faf159bbcc74ae4a6
 #cd ../../..
 echo "----------------------------------------"
 echo "Patching bootable_recovery -> fix compile issue - undefined reference to 'gr_maxExW'"
