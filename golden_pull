@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Patching frameworks_native -> STE OMX Fix"
 cd frameworks/native
-git fetch https://gerrit.omnirom.org/android_frameworks_native refs/changes/26/6826/1 && git cherry-pick FETCH_HEAD
+git fetch https://gerrit.omnirom.org/android_frameworks_native refs/changes/34/6834/1 && git cherry-pick FETCH_HEAD
 echo "----------------------------------------"
 echo "Patching frameworks_native -> Fix buffering on STE devices"
 git fetch https://gerrit.omnirom.org/android_frameworks_native refs/changes/27/6827/1 && git cherry-pick FETCH_HEAD
