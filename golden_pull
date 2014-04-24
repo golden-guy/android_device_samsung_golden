@@ -34,5 +34,26 @@ cd bootable/recovery
 git fetch https://gerrit.omnirom.org/android_bootable_recovery refs/changes/04/5804/1 && git checkout FETCH_HEAD
 cd ../..
 echo "----------------------------------------"
+cd frameworks/base
+echo "Patching frameworks_base: Floating window with multitasking"
+git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/80/6380/20 && git cherry-pick FETCH_HEAD
+echo "----------------------------------------"
+echo "Patching frameworks_base: implement App circle sidebar"
+git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/78/6378/16 && git cherry-pick FETCH_HEAD
+echo "----------------------------------------"
+echo "Patching frameworks_base: App Circle sidebar (add support floating window)"
+git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/15/6515/9 && git cherry-pick FETCH_HEAD
+cd ../..
+echo "----------------------------------------"
+cd packages/apps/OmniGears
+echo "Patching OmniGears: Implement App circle sidebar"
+git fetch https://gerrit.omnirom.org/android_packages_apps_OmniGears refs/changes/79/6379/4 && git cherry-pick FETCH_HEAD
+cd ../../..
+echo "----------------------------------------"
+cd packages/apps/OmniSwitch
+echo "OmniSwitch: Allow open app as floating window"
+git fetch https://gerrit.omnirom.org/android_packages_apps_OmniSwitch refs/changes/61/6661/1 && git cherry-pick FETCH_HEAD
+cd ../../..
+echo "----------------------------------------"
 echo "DONE"
 exit 0

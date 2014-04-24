@@ -1,0 +1,7 @@
+#!/bin/bash
+repo sync -d
+repo forall -c 'git reset --hard'
+repo forall -c 'git clean -f -d'
+repo sync
+./device/samsung/golden/golden_pull
+exit 0
