@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- If there is no sysfs-based control mechanism, enable this -->
-    <bool name="useCameraInterface">true</bool>
+
+    <!-- Full path to the sysfs toggle -->
+    <string name="flashDevice">/sys/class/sec/flash/enable</string>
+
+    <!-- Highest setting, leave -1 if it doesn't exist -->
+    <integer name="valueDeathRay">-1</integer>
+
 </resources>
