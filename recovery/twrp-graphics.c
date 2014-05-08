@@ -69,6 +69,7 @@ static GGLSurface gr_framebuffer[NUM_BUFFERS];
 static GGLSurface gr_mem_surface;
 static unsigned gr_active_fb = 0;
 static unsigned double_buffering = 0;
+static int gr_is_curr_clr_opaque = 0;
 
 static int gr_fb_fd = -1;
 static int gr_vt_fd = -1;
@@ -288,6 +289,8 @@ void gr_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a
     color[2] = ((b << 8) | b) + 1;
     color[3] = ((a << 8) | a) + 1;
     gl->color4xv(gl, color);
+
+    gr_is_curr_clr_opaque = (a == 255);
 }
 
 int gr_measureEx(const char *s, void* font)
@@ -304,6 +307,30 @@ int gr_measureEx(const char *s, void* font)
         off -= 32;
         if (off < 96)
             total += (fnt->offset[off+1] - fnt->offset[off]);
+    }
+    return total;
+}
+
+int gr_maxExW(const char *s, void* font, int max_width)
+{
+    GRFont* fnt = (GRFont*) font;
+    int total = 0;
+    unsigned pos;
+    unsigned off;
+
+    if (!fnt) fnt = gr_font;
+
+    while ((off = *s++))
+    {
+        off -= 32;
+        if (off < 96) {
+            max_width -= (fnt->offset[off+1] - fnt->offset[off]);
+if (max_width > 0) {
+total++;
+} else {
+return total;
+}
+}
     }
     return total;
 }
@@ -463,8 +490,16 @@ int twgr_text(int x, int y, const char *s)
 void gr_fill(int x, int y, int w, int h)
 {
     GGLContext *gl = gr_context;
+
+    if(gr_is_curr_clr_opaque)
+        gl->disable(gl, GGL_BLEND);
+
     gl->disable(gl, GGL_TEXTURE_2D);
     gl->recti(gl, x, y, x + w, y + h);
+
+    if(gr_is_curr_clr_opaque)
+
+        gl->enable(gl, GGL_BLEND);
 }
 
 void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
@@ -473,13 +508,21 @@ void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
     }
 
     GGLContext *gl = gr_context;
-    gl->bindTexture(gl, (GGLSurface*) source);
+    GGLSurface *surface = (GGLSurface*)source;
+
+    if(surface->format == GGL_PIXEL_FORMAT_RGBX_8888)
+        gl->disable(gl, GGL_BLEND);
+
+    gl->bindTexture(gl, surface);
     gl->texEnvi(gl, GGL_TEXTURE_ENV, GGL_TEXTURE_ENV_MODE, GGL_REPLACE);
     gl->texGeni(gl, GGL_S, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
     gl->texGeni(gl, GGL_T, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
     gl->enable(gl, GGL_TEXTURE_2D);
     gl->texCoord2i(gl, sx - dx, sy - dy);
     gl->recti(gl, dx, dy, dx + w, dy + h);
+
+    if(surface->format == GGL_PIXEL_FORMAT_RGBX_8888)
+        gl->enable(gl, GGL_BLEND);
 }
 
 unsigned int gr_get_width(gr_surface surface) {
