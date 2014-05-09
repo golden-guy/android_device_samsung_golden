@@ -33,11 +33,6 @@ cd packages/services/Telephony
 git fetch https://gerrit.omnirom.org/android_packages_services_Telephony refs/changes/32/6832/1 && git cherry-pick FETCH_HEAD
 cd ../../..
 echo "----------------------------------------"
-echo "Patching bootable_recovery -> fix compile issue - undefined reference to 'gr_maxExW'"
-cd bootable/recovery
-git fetch https://gerrit.omnirom.org/android_bootable_recovery refs/changes/04/5804/1 && git checkout FETCH_HEAD
-cd ../..
-echo "----------------------------------------"
 cd frameworks/base
 echo "Patching frameworks_base: Floating window with multitasking"
 git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/80/6380/20 && git cherry-pick FETCH_HEAD
