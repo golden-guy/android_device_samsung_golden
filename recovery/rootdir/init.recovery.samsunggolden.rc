@@ -5,6 +5,7 @@ on init
     mkdir /sdcard
     mkdir /external_sd
 
+    write /sys/devices/platform/ab8505-i2c.0/ab8500-usb.0/boot_time_device 1
     write /sys/devices/platform/mcde_fb/graphics/fb0/bits_per_pixel 16
 
     # USB initialization
