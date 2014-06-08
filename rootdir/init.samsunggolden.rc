@@ -423,6 +423,15 @@ on boot
     setprop persist.debug.mmiocamera.level 777
     setprop debug.libcamera.trace 666
 
+    # Camera backward compatibility with outdated blobs
+
+    # Re-mount /system as Read-write
+    mount ext4 /dev/block/mmcblk0p22 /system remount rw
+    # Symlink libjhead.so > libhead.so
+    symlink /system/lib/libjhead.so /system/lib/libhead.so
+    # Re-mount /system as Read-only again
+    mount ext4 /dev/block/mmcblk0p22 /system remount ro noatime errors=panic
+
     # Battery
     chown system system /sys/class/power_supply/battery/batt_vol_adc_cal
     chown radio system /sys/class/power_supply/battery/fg_reset_soc
@@ -534,3 +543,4 @@ service iprenew_bt-pan /system/bin/dhcpcd -n
 	class main
 	disabled
 	oneshot
+
