@@ -2,6 +2,7 @@
 on init
     export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
     export LD_LIBRARY_PATH /vendor/lib:/system/lib:/system/lib/ste_omxcomponents
+    export LD_PRELOAD /system/lib/libjhead.so
     export ANDROID_BOOTLOGO 1
     export ANDROID_ROOT /system
     export ANDROID_ASSETS /system/app
