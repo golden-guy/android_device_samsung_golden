@@ -46,6 +46,10 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/recovery/rootdir/lib/modules/j4fs.ko:recovery/root/lib/modules/j4fs.ko \
     $(LOCAL_PATH)/recovery/rootdir/lib/modules/param.ko:recovery/root/lib/modules/param.ko
 
+# Fstrim cron job
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/init.d/69fstrim_crond:system/etc/init.d/69fstrim_crond
+
 # Inputs
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/usr/keylayout/gpio-keys.kl:system/usr/keylayout/gpio-keys.kl

@@ -1,0 +1,10 @@
+#!/system/bin/sh
+# Create crontab for fstrim once a week
+if [ ! -f /data/crontab/root ]; then
+  mkdir /data/crontab
+  echo "0 4 * * 1 fstrim /cache" > /data/crontab/root
+  echo "5 4 * * 1 fstrim /data" >> /data/crontab/root
+  chmod 775 /data/crontab/root
+fi
+# Start cron
+crond -b -c /data/crontab
