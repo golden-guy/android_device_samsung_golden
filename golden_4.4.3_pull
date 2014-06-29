@@ -15,9 +15,6 @@ echo "----------------------------------------"
 echo "Patching frameworks_base -> Fix STE OMX"
 cd base
 git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/29/6829/2 && git cherry-pick FETCH_HEAD
-echo "----------------------------------------"
-echo "SystemUI: add missing status bar image"
-git fetch https://gerrit.omnirom.org/android_frameworks_base refs/changes/33/6833/1 && git cherry-pick FETCH_HEAD
 cd ../..
 echo "----------------------------------------"
 echo "Patching system_core -> STE OMX Fix"
