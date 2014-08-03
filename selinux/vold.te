@@ -1,0 +1,6 @@
+# Allow vold to relabel sdcard fs mounts
+allow vold unlabeled:filesystem { relabelfrom };
+allow vold sdcard_external:filesystem { relabelfrom relabelto };
+
+allow vold kernel:process setsched;
+allow vold sdcardd_exec:file { read open execute execute_no_trans };

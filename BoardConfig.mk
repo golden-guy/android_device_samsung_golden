@@ -127,7 +127,18 @@ PLATFORM_SECURITY_PATCH := 2015-11-01
 # SELinux
 HAVE_SELINUX := true
 BOARD_SEPOLICY_DIRS += device/samsung/golden/sepolicy
-BOARD_SEPOLICY_UNION += file_contexts
+BOARD_SEPOLICY_UNION += \
+    file_contexts \
+    device.te \
+    domain.te \
+    file.te \
+    geomagneticd.te \
+    init.te \
+    mediaserver.te \
+    orientationd.te \
+    system.te \
+    vold.te \
+    wpa_supplicant.te
 
 # Recovery
 TARGET_RECOVERY_FSTAB := device/samsung/golden/rootdir/fstab.samsunggolden
