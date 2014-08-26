@@ -119,6 +119,7 @@ BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := true
 # Charging mode
 BOARD_LPM_BOOT_ARGUMENT_NAME := lpm_boot
 BOARD_LPM_BOOT_ARGUMENT_VALUE := 1
+BOARD_CHARGER_RES := device/samsung/golden/res/charger
 
 # SELinux
 HAVE_SELINUX := true
