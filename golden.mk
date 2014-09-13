@@ -118,7 +118,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.call_ring.multiple=false \
     ro.telephony.ril_class=SamsungU8500RIL \
     ro.telephony.sends_barcount=1 \
-    ro.telephony.default_network=0
+    ro.telephony.default_network=0 \
+    ste.special_fast_dormancy=true
 
 # GPS
 PRODUCT_COPY_FILES += \
@@ -149,8 +150,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # USB
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.usb.config=mtp,adb \
-    persist.service.adb.enable=1 \
-    ste.special_fast_dormancy=false
+    persist.service.adb.enable=1
 
 # Charger
 PRODUCT_PACKAGES += \
