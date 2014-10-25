@@ -194,7 +194,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.com.google.locationfeatures=1 \
     ro.setupwizard.mode=OPTIONAL \
     ro.setupwizard.enable_bypass=1 \
-    ro.config.sync=yes
+    ro.config.sync=yes \
+    ro.config.ntp.server_poll=86400000 \
+    ro.config.ntp.clock_sync=1800000 \
+    ro.config.ntp.sync_mode=3
 
 # Define kind of DPI
 PRODUCT_AAPT_CONFIG := normal hdpi
