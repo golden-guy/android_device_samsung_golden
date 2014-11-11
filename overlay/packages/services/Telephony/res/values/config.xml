@@ -6,13 +6,13 @@
     <bool name="send_mic_mute_to_AudioManager">true</bool>
 
     <!-- Determines whether the volume stream must be reset after a mute change
-	in com.android.phone.AudioRouter class. Set the flag to true to solve the
-	low in-call volume for STE devices after accepting an incoming call. -->
+        in com.android.phone.AudioRouter class. Set the flag to true to solve the
+        low in-call volume for STE devices after accepting an incoming call. -->
     <bool name="reset_volume_after_mute_change">true</bool>
 
     <!-- Determines wheter the volume stream must be reset after a audio mode change
-	in com.android.phone.AudioRouter class. Set the flag to true to solve the
-	low in-call volume for STE devices after switching between audio modes. -->
+        in com.android.phone.AudioRouter class. Set the flag to true to solve the
+        low in-call volume for STE devices after switching between audio modes. -->
     <bool name="reset_volume_after_audio_mode_change">true</bool>
 
 </resources>

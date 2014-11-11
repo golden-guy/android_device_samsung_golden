@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- To use with Torch app using camera interface -->
-    <string-array name="pref_camera_flashmode_entryvalues">
-        <item>off</item>
-        <item>auto</item>
-        <item>torch</item>
-     </string-array>
-</resources>
