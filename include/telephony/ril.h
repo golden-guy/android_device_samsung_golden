@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <telephony/ril_cdma_sms.h>
+#include <telephony/ril_nv_items.h>
 #include <telephony/ril_msim.h>
 #ifndef FEATURE_UNIT_TEST
 #include <sys/time.h>
@@ -49,6 +50,20 @@ extern "C" {
 #define MAX_QEMU_PIPE_NAME_LENGTH  11
 
 typedef void * RIL_Token;
+
+typedef enum {
+    RIL_SOCKET_1,
+#if (SIM_COUNT >= 2)
+    RIL_SOCKET_2,
+#if (SIM_COUNT >= 3)
+    RIL_SOCKET_3,
+#endif
+#if (SIM_COUNT >= 4)
+    RIL_SOCKET_4,
+#endif
+#endif
+    RIL_SOCKET_NUM
+} RIL_SOCKET_ID;
 
 typedef enum {
     RIL_E_SUCCESS = 0,
@@ -85,7 +100,7 @@ typedef enum {
     RIL_E_SS_MODIFIED_TO_SS = 25,               /* SS request modified to different SS request */
     RIL_E_SUBSCRIPTION_NOT_SUPPORTED = 26,      /* Subscription not supported by RIL */
     RIL_E_MISSING_RESOURCE = 27,                /* No logical channel available */
-    RIL_E_NO_SUCH_ELEMENT = 28,                 /* Application not found on sim */
+    RIL_E_NO_SUCH_ELEMENT = 28,                 /* Application not found on SIM */
     RIL_E_INVALID_PARAMETER = 29                /* TO DO: add description*/
 } RIL_Errno;
 
@@ -277,6 +292,39 @@ typedef struct {
                                    to point connections. */
 } RIL_Data_Call_Response_v6;
 
+typedef struct {
+    int             status;     /* A RIL_DataCallFailCause, 0 which is PDP_FAIL_NONE if no error */
+    int             suggestedRetryTime; /* If status != 0, this fields indicates the suggested retry
+                                           back-off timer value RIL wants to override the one
+                                           pre-configured in FW.
+                                           The unit is miliseconds.
+                                           The value < 0 means no value is suggested.
+                                           The value 0 means retry should be done ASAP.
+                                           The value of INT_MAX(0x7fffffff) means no retry. */
+    int             cid;        /* Context ID, uniquely identifies this call */
+    int             active;     /* 0=inactive, 1=active/physical link down, 2=active/physical link up */
+    char *          type;       /* One of the PDP_type values in TS 27.007 section 10.1.1.
+                                   For example, "IP", "IPV6", "IPV4V6", or "PPP". If status is
+                                   PDP_FAIL_ONLY_SINGLE_BEARER_ALLOWED this is the type supported
+                                   such as "IP" or "IPV6" */
+    char *          ifname;     /* The network interface name */
+    char *          addresses;  /* A space-delimited list of addresses with optional "/" prefix length,
+                                   e.g., "192.0.1.3" or "192.0.1.11/16 2001:db8::1/64".
+                                   May not be empty, typically 1 IPv4 or 1 IPv6 or
+                                   one of each. If the prefix length is absent the addresses
+                                   are assumed to be point to point with IPv4 having a prefix
+                                   length of 32 and IPv6 128. */
+    char *          dnses;      /* A space-delimited list of DNS server addresses,
+                                   e.g., "192.0.1.3" or "192.0.1.11 2001:db8::1".
+                                   May be empty. */
+    char *          gateways;   /* A space-delimited list of default gateway addresses,
+                                   e.g., "192.0.1.3" or "192.0.1.11 2001:db8::1".
+                                   May be empty in which case the addresses represent point
+                                   to point connections. */
+    char *          pcscf;    /* the Proxy Call State Control Function address
+                                 via PCO(Protocol Configuration Option) for IMS client. */
+} RIL_Data_Call_Response_v9; // FIXME: Change to v10
+
 typedef enum {
     RADIO_TECH_3GPP = 1, /* 3GPP Technologies - GSM, WCDMA */
     RADIO_TECH_3GPP2 = 2 /* 3GPP2 Technologies - CDMA */
@@ -369,10 +417,27 @@ typedef struct {
     char *aidPtr;   /* AID value, See ETSI 102.221 8.1 and 101.220 4, NULL if no value. */
 } RIL_SIM_IO_v6;
 
+/* Used by RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL and
+ * RIL_REQUEST_SIM_TRANSMIT_APDU_BASIC. */
+typedef struct {
+    int sessionid;  /* "sessionid" from TS 27.007 +CGLA command. Should be
+                       ignored for +CSIM command. */
+
+    /* Following fields are used to derive the APDU ("command" and "length"
+       values in TS 27.007 +CSIM and +CGLA commands). */
+    int cla;
+    int instruction;
+    int p1;
+    int p2;
+    int p3;         /* A negative P3 implies a 4 byte APDU. */
+    char *data;     /* May be NULL. In hex string format. */
+} RIL_SIM_APDU;
+
 typedef struct {
     int sw1;
     int sw2;
-    char *simResponse;  /* In hex string format ([a-fA-F0-9]*). */
+    char *simResponse;  /* In hex string format ([a-fA-F0-9]*), except for SIM_AUTHENTICATION
+                           response for which it is in Base64 format, see 3GPP TS 31.102 7.1.2 */
 } RIL_SIM_IO_Response;
 
 /* See also com.android.internal.telephony.gsm.CallForwardInfo */
@@ -463,7 +528,8 @@ typedef enum {
     PDP_FAIL_SERVICE_OPTION_NOT_SUBSCRIBED = 0x21, /* no retry */
     PDP_FAIL_SERVICE_OPTION_OUT_OF_ORDER = 0x22,
     PDP_FAIL_NSAPI_IN_USE = 0x23,                  /* no retry */
-    PDP_FAIL_REGULAR_DEACTIVATION = 0x24,          /* restart radio */
+    PDP_FAIL_REGULAR_DEACTIVATION = 0x24,          /* possibly restart radio,
+                                                      based on framework config */
     PDP_FAIL_ONLY_IPV4_ALLOWED = 0x32,             /* no retry */
     PDP_FAIL_ONLY_IPV6_ALLOWED = 0x33,             /* no retry */
     PDP_FAIL_ONLY_SINGLE_BEARER_ALLOWED = 0x34,
@@ -794,7 +860,7 @@ typedef struct {
                   * Range : 25 to 120
                   * INT_MAX: 0x7FFFFFFF denotes invalid value.
                   * Reference: 3GPP TS 25.123, section 9.1.1.1 */
-} RIL_TD_SCDMA_SignalStrength_CAF;
+} RIL_TD_SCDMA_SignalStrength;
 
 /* Deprecated, use RIL_SignalStrength_v6 */
 typedef struct {
@@ -822,8 +888,16 @@ typedef struct {
     RIL_CDMA_SignalStrength         CDMA_SignalStrength;
     RIL_EVDO_SignalStrength         EVDO_SignalStrength;
     RIL_LTE_SignalStrength_v8       LTE_SignalStrength;
-    RIL_TD_SCDMA_SignalStrength_CAF TD_SCDMA_SignalStrength;
-} RIL_SignalStrength_v9_CAF;
+    RIL_TD_SCDMA_SignalStrength     TD_SCDMA_SignalStrength;
+} RIL_SignalStrength_v9;
+
+typedef struct {
+    RIL_GW_SignalStrength       GW_SignalStrength;
+    RIL_CDMA_SignalStrength     CDMA_SignalStrength;
+    RIL_EVDO_SignalStrength     EVDO_SignalStrength;
+    RIL_LTE_SignalStrength_v8   LTE_SignalStrength;
+    RIL_TD_SCDMA_SignalStrength TD_SCDMA_SignalStrength;
+} RIL_SignalStrength_v10;
 
 /** RIL_CellIdentityGsm */
 typedef struct {
@@ -867,6 +941,15 @@ typedef struct {
     int tac;    /* 16-bit tracking area code, INT_MAX if unknown  */
 } RIL_CellIdentityLte;
 
+/** RIL_CellIdentityTdscdma */
+typedef struct {
+    int mcc;    /* 3-digit Mobile Country Code, 0..999, INT_MAX if unknown  */
+    int mnc;    /* 2 or 3-digit Mobile Network Code, 0..999, INT_MAX if unknown  */
+    int lac;    /* 16-bit Location Area Code, 0..65535, INT_MAX if unknown  */
+    int cid;    /* 28-bit UMTS Cell Identity described in TS 25.331, 0..268435455, INT_MAX if unknown  */
+    int cpid;    /* 8-bit Cell Parameters ID described in TS 25.331, 0..127, INT_MAX if unknown */
+} RIL_CellIdentityTdscdma;
+
 /** RIL_CellInfoGsm */
 typedef struct {
   RIL_CellIdentityGsm   cellIdentityGsm;
@@ -892,12 +975,19 @@ typedef struct {
   RIL_LTE_SignalStrength_v8  signalStrengthLte;
 } RIL_CellInfoLte;
 
+/** RIL_CellInfoTdscdma */
+typedef struct {
+  RIL_CellIdentityTdscdma cellIdentityTdscdma;
+  RIL_TD_SCDMA_SignalStrength signalStrengthTdscdma;
+} RIL_CellInfoTdscdma;
+
 // Must be the same as CellInfo.TYPE_XXX
 typedef enum {
   RIL_CELL_INFO_TYPE_GSM    = 1,
   RIL_CELL_INFO_TYPE_CDMA   = 2,
   RIL_CELL_INFO_TYPE_LTE    = 3,
   RIL_CELL_INFO_TYPE_WCDMA  = 4,
+  RIL_CELL_INFO_TYPE_TD_SCDMA  = 5
 } RIL_CellInfoType;
 
 // Must be the same as CellInfo.TIMESTAMP_TYPE_XXX
@@ -919,6 +1009,7 @@ typedef struct {
     RIL_CellInfoCdma    cdma;
     RIL_CellInfoLte     lte;
     RIL_CellInfoWcdma   wcdma;
+    RIL_CellInfoTdscdma tdscdma;
   } CellInfo;
 } RIL_CellInfo;
 
@@ -1031,6 +1122,8 @@ typedef struct {
 
 #define RIL_CDMA_MAX_NUMBER_OF_INFO_RECS 10
 
+#define RIL_HARDWARE_CONFIG_UUID_LENGTH 64
+
 typedef struct {
   char numberOfInfoRecs;
   RIL_CDMA_InformationRecord infoRec[RIL_CDMA_MAX_NUMBER_OF_INFO_RECS];
@@ -1115,6 +1208,111 @@ typedef struct {
     RIL_CfData cfData;
   };
 } RIL_StkCcUnsolSsResponse;
+
+/* See RIL_REQUEST_NV_READ_ITEM */
+typedef struct {
+  RIL_NV_Item itemID;
+} RIL_NV_ReadItem;
+
+/* See RIL_REQUEST_NV_WRITE_ITEM */
+typedef struct {
+  RIL_NV_Item   itemID;
+  char *        value;
+} RIL_NV_WriteItem;
+
+typedef enum {
+    HANDOVER_STARTED = 0,
+    HANDOVER_COMPLETED = 1,
+    HANDOVER_FAILED = 2,
+    HANDOVER_CANCELED = 3
+} RIL_SrvccState;
+
+/* hardware configuration reported to RILJ. */
+typedef enum {
+   RIL_HARDWARE_CONFIG_MODEM = 0,
+   RIL_HARDWARE_CONFIG_SIM = 1,
+} RIL_HardwareConfig_Type;
+
+typedef enum {
+   RIL_HARDWARE_CONFIG_STATE_ENABLED = 0,
+   RIL_HARDWARE_CONFIG_STATE_STANDBY = 1,
+   RIL_HARDWARE_CONFIG_STATE_DISABLED = 2,
+} RIL_HardwareConfig_State;
+
+typedef struct {
+   int rilModel;
+   uint32_t rat; /* bitset - ref. RIL_RadioTechnology. */
+   int maxVoice;
+   int maxData;
+   int maxStandby;
+} RIL_HardwareConfig_Modem;
+
+typedef struct {
+   char modemUuid[RIL_HARDWARE_CONFIG_UUID_LENGTH];
+} RIL_HardwareConfig_Sim;
+
+typedef struct {
+  RIL_HardwareConfig_Type type;
+  char uuid[RIL_HARDWARE_CONFIG_UUID_LENGTH];
+  RIL_HardwareConfig_State state;
+  union {
+     RIL_HardwareConfig_Modem modem;
+     RIL_HardwareConfig_Sim sim;
+  } cfg;
+} RIL_HardwareConfig;
+
+/**
+ * Data connection power state
+ */
+typedef enum {
+    RIL_DC_POWER_STATE_LOW      = 1,        // Low power state
+    RIL_DC_POWER_STATE_MEDIUM   = 2,        // Medium power state
+    RIL_DC_POWER_STATE_HIGH     = 3,        // High power state
+    RIL_DC_POWER_STATE_UNKNOWN  = INT32_MAX // Unknown state
+} RIL_DcPowerStates;
+
+/**
+ * Data connection real time info
+ */
+typedef struct {
+    uint64_t                    time;       // Time in nanos as returned by ril_nano_time
+    RIL_DcPowerStates           powerState; // Current power state
+} RIL_DcRtInfo;
+
+/**
+ * Data profile to modem
+ */
+typedef struct {
+    /* id of the data profile */
+    int profileId;
+    /* the APN to connect to */
+    char* apn;
+    /** one of the PDP_type values in TS 27.007 section 10.1.1.
+     * For example, "IP", "IPV6", "IPV4V6", or "PPP".
+     */
+    char* protocol;
+    /** authentication protocol used for this PDP context
+     * (None: 0, PAP: 1, CHAP: 2, PAP&CHAP: 3)
+     */
+    int authType;
+    /* the username for APN, or NULL */
+    char* user;
+    /* the password for APN, or NULL */
+    char* password;
+    /* the profile type, TYPE_COMMON-0, TYPE_3GPP-1, TYPE_3GPP2-2 */
+    int type;
+    /* the period in seconds to limit the maximum connections */
+    int maxConnsTime;
+    /* the maximum connections during maxConnsTime */
+    int maxConns;
+    /** the required wait time in seconds after a successful UE initiated
+     * disconnect of a given PDN connection before the device can send
+     * a new PDN connection request for that given PDN
+     */
+    int waitTime;
+    /* true to enable the profile, 0 to disable, 1 to enable */
+    int enabled;
+} RIL_DataProfileInfo;
 
 /**
  * RIL_REQUEST_GET_SIM_STATUS
@@ -3752,30 +3950,117 @@ typedef struct {
 #define RIL_REQUEST_IMS_SEND_SMS 113
 
 /**
- * RIL_REQUEST_GET_DATA_CALL_PROFILE
+ * RIL_REQUEST_SIM_TRANSMIT_APDU_BASIC
  *
- * Get the Data Call Profile for a particular app type
+ * Request APDU exchange on the basic channel. This command reflects TS 27.007
+ * "generic SIM access" operation (+CSIM). The modem must ensure proper function
+ * of GSM/CDMA, and filter commands appropriately. It should filter
+ * channel management and SELECT by DF name commands.
  *
- * "data" is const int*
- * (const int*)data[0] - App type. Value is specified the RUIM spec C.S0023-D
+ * "data" is a const RIL_SIM_APDU *
+ * "sessionid" field should be ignored.
  *
- *
- * "response" is a const char * containing the count and the array of profiles
- * ((const int *)response)[0] Number RIL_DataCallProfileInfo structs(count)
- * ((const char *)response)[1] is the buffer that contains 'count' number of
- *                              RIL_DataCallProfileInfo structs.
+ * "response" is a const RIL_SIM_IO_Response *
  *
  * Valid errors:
  *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
  *  GENERIC_FAILURE
- *  RIL_E_DATA_CALL_PROFILE_ERROR
- *  RIL_E_DATA_CALL_PROFILE_NOT_AVAILABLE
- *
  */
-#define RIL_REQUEST_GET_DATA_CALL_PROFILE 114
+#define RIL_REQUEST_SIM_TRANSMIT_APDU_BASIC 114
 
 /**
- * RIL_REQUEST_SET_UICC_SUBSCRIPTION
+ * RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL
+ *
+ * Exchange APDUs with a UICC over a previously opened logical channel. This
+ * command reflects TS 27.007 "generic logical channel access" operation
+ * (+CGLA). The modem should filter channel management and SELECT by DF name
+ * commands.
+ *
+ * "data" is a const RIL_SIM_APDU*
+ *
+ * "response" is a const RIL_SIM_IO_Response *
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
+ */
+#define RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL 117
+
+/**
+ * RIL_REQUEST_NV_READ_ITEM
+ *
+ * Read one of the radio NV items defined in RadioNVItems.java / ril_nv_items.h.
+ * This is used for device configuration by some CDMA operators.
+ *
+ * "data" is a const RIL_NV_ReadItem *
+ *
+ * "response" is const char * containing the contents of the NV item
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
+ */
+#define RIL_REQUEST_NV_READ_ITEM 118
+
+/**
+ * RIL_REQUEST_NV_WRITE_ITEM
+ *
+ * Write one of the radio NV items defined in RadioNVItems.java / ril_nv_items.h.
+ * This is used for device configuration by some CDMA operators.
+ *
+ * "data" is a const RIL_NV_WriteItem *
+ *
+ * "response" is NULL
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
+ */
+#define RIL_REQUEST_NV_WRITE_ITEM 119
+
+/**
+ * RIL_REQUEST_NV_WRITE_CDMA_PRL
+ *
+ * Update the CDMA Preferred Roaming List (PRL) in the radio NV storage.
+ * This is used for device configuration by some CDMA operators.
+ *
+ * "data" is a const char * containing the PRL as a byte array
+ *
+ * "response" is NULL
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
+ */
+#define RIL_REQUEST_NV_WRITE_CDMA_PRL 120
+
+/**
+ * RIL_REQUEST_NV_RESET_CONFIG
+ *
+ * Reset the radio NV configuration to the factory state.
+ * This is used for device configuration by some CDMA operators.
+ *
+ * "data" is int *
+ * ((int *)data)[0] is 1 to reload all NV items
+ * ((int *)data)[0] is 2 for erase NV reset (SCRTN)
+ * ((int *)data)[0] is 3 for factory reset (RTN)
+ *
+ * "response" is NULL
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
+ */
+#define RIL_REQUEST_NV_RESET_CONFIG 121
+
+ /** RIL_REQUEST_SET_UICC_SUBSCRIPTION
+ * FIXME This API needs to have more documentation.
  *
  * Selection/de-selection of a subscription from a SIM card
  * "data" is const  RIL_SelectUiccSub*
@@ -3790,13 +4075,17 @@ typedef struct {
  *  SUBSCRIPTION_NOT_SUPPORTED
  *
  */
-#define RIL_REQUEST_SET_UICC_SUBSCRIPTION  115
+#define RIL_REQUEST_SET_UICC_SUBSCRIPTION  122
 
 /**
- *  RIL_REQUEST_SET_DATA_SUBSCRIPTION
+ *  RIL_REQUEST_ALLOW_DATA
  *
- *  Selects a subscription for data call setup
- * "data" is NULL
+ *  Tells the modem whether data calls are allowed or not
+ *
+ * "data" is int *
+ * FIXME slotId and aid will be added.
+ * ((int *)data)[0] is == 0 to allow data calls
+ * ((int *)data)[0] is == 1 to disallow data calls
  *
  * "response" is NULL
  *
@@ -3805,95 +4094,196 @@ typedef struct {
  *  SUCCESS
  *  RADIO_NOT_AVAILABLE (radio resetting)
  *  GENERIC_FAILURE
- *  SUBSCRIPTION_NOT_SUPPORTED
  *
  */
-#define RIL_REQUEST_SET_DATA_SUBSCRIPTION  116
+#define RIL_REQUEST_ALLOW_DATA  123
 
 /**
- * RIL_REQUEST_SIM_TRANSMIT_BASIC
+ * RIL_REQUEST_GET_HARDWARE_CONFIG
  *
- * Request APDU exchange on the basic channel.
+ * Request all of the current hardware (modem and sim) associated
+ * with the RIL.
  *
- * "data" is a const RIL_SIM_IO *
+ * "data" is NULL
  *
- * "response" is a const RIL_SIM_IO_Response *
+ * "response" is an array of  RIL_HardwareConfig.
+ */
+#define RIL_REQUEST_GET_HARDWARE_CONFIG 124
+
+/**
+ * RIL_REQUEST_SIM_AUTHENTICATION
+ *
+ * Returns the response of SIM Authentication through RIL to a
+ * challenge request.
+ *
+ * "data" Base64 encoded string containing challenge:
+ *      int   authContext;          P2 value of authentication command, see P2 parameter in
+ *                                  3GPP TS 31.102 7.1.2
+ *      char *authData;             the challenge string in Base64 format, see 3GPP
+ *                                  TS 31.102 7.1.2
+ *      char *aid;                  AID value, See ETSI 102.221 8.1 and 101.220 4,
+ *                                  NULL if no value
+ *
+ * "response" Base64 encoded strings containing response:
+ *      int   sw1;                  Status bytes per 3GPP TS 31.102 section 7.3
+ *      int   sw2;
+ *      char *simResponse;          Response in Base64 format, see 3GPP TS 31.102 7.1.2
+ */
+#define RIL_REQUEST_SIM_AUTHENTICATION 125
+
+/**
+ * RIL_REQUEST_GET_DC_RT_INFO
+ *
+ * Requests the Data Connection Real Time Info
+ *
+ * "data" is NULL
+ *
+ * "response" is the most recent RIL_DcRtInfo
  *
  * Valid errors:
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
  *
- * SUCCESS
- * TO DO: add erros
+ * See also: RIL_UNSOL_DC_RT_INFO_CHANGED
  */
-#define RIL_REQUEST_SIM_TRANSMIT_BASIC 117
+#define RIL_REQUEST_GET_DC_RT_INFO 126
 
 /**
- * RIL_REQUEST_SIM_OPEN_CHANNEL
+ * RIL_REQUEST_SET_DC_RT_INFO_RATE
  *
- * Open a new logical channel.
+ * This is the minimum number of milliseconds between successive
+ * RIL_UNSOL_DC_RT_INFO_CHANGED messages and defines the highest rate
+ * at which RIL_UNSOL_DC_RT_INFO_CHANGED's will be sent. A value of
+ * 0 means send as fast as possible.
  *
- * "data" is a const char * containing the AID of the applet
+ * "data" The number of milliseconds as an int
  *
- * "response" is a int * containing the channel id
+ * "response" is null
  *
  * Valid errors:
- *
- * SUCCESS
- * TO DO: add erros
+ *  SUCCESS must not fail
  */
-#define RIL_REQUEST_SIM_OPEN_CHANNEL 118
+#define RIL_REQUEST_SET_DC_RT_INFO_RATE 127
 
 /**
- * RIL_REQUEST_SIM_CLOSE_CHANNEL
+ * RIL_REQUEST_SET_DATA_PROFILE
  *
- * Close a previoulsy opened logical channel.
- *
- * "data" is a const int * containing the channel id
- *
+ * Set data profile in modem
+ * "data" is an const RIL_DataProfileInfo **
+ * "datalen" is count * sizeof(const RIL_DataProfileInfo *)
  * "response" is NULL
  *
  * Valid errors:
- *
- * SUCCESS
- * TO DO: add erros
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE (radio resetting)
+ *  GENERIC_FAILURE
+ *  SUBSCRIPTION_NOT_AVAILABLE
  */
-#define RIL_REQUEST_SIM_CLOSE_CHANNEL 119
+#define RIL_REQUEST_SET_DATA_PROFILE 128
 
 /**
- * RIL_REQUEST_SIM_TRANSMIT_CHANNEL
+ * RIL_REQUEST_SHUTDOWN
  *
- * Exchange APDUs with a UICC over a previously opened logical channel.
+ * Device is shutting down. All further commands are ignored
+ * and RADIO_NOT_AVAILABLE must be returned.
  *
- * "data" is a const RIL_SIM_IO_v7_CAF *
- *
- * "response" is a const RIL_SIM_IO_Response *
- *
- * Valid errors:
- *
- * SUCCESS
- * TO DO: add erros
- */
-#define RIL_REQUEST_SIM_TRANSMIT_CHANNEL 120
-
-/**
- * RIL_REQUEST_SIM_GET_ATR
- *
- * Get the ATR from SIM Card
- *
- * Only valid when radio state is "RADIO_STATE_ON"
- *
- * "data" is const int *
- * ((const int *)data)[0] contains the slot index on the SIM from which ATR is requested.
- *
- * "response" is a const char * containing the ATR, See ETSI 102.221 8.1 and ISO/IEC 7816 3
+ * "data" is null
+ * "response" is NULL
  *
  * Valid errors:
- *
- * SUCCESS
- * RADIO_NOT_AVAILABLE (radio resetting)
- * GENERIC_FAILURE
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE
+ *  GENERIC_FAILURE
  */
+#define RIL_REQUEST_SHUTDOWN 129
 
-#define RIL_REQUEST_SIM_GET_ATR 121
+/* SAMSUNG REQUESTS */
+#define RIL_REQUEST_GET_CELL_BROADCAST_CONFIG 10002
+
+#define RIL_REQUEST_SEND_ENCODED_USSD 10005
+#define RIL_REQUEST_SET_PDA_MEMORY_STATUS 10006
+#define RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO 10007
+#define RIL_REQUEST_GET_PHONEBOOK_ENTRY 10008
+#define RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY 10009
+#define RIL_REQUEST_DIAL_VIDEO_CALL 10010
+#define RIL_REQUEST_CALL_DEFLECTION 10011
+#define RIL_REQUEST_READ_SMS_FROM_SIM 10012
+#define RIL_REQUEST_USIM_PB_CAPA 10013
+#define RIL_REQUEST_LOCK_INFO 10014
+
+#define RIL_REQUEST_DIAL_EMERGENCY 10016
+#define RIL_REQUEST_GET_STOREAD_MSG_COUNT 10017
+#define RIL_REQUEST_STK_SIM_INIT_EVENT 10018
+#define RIL_REQUEST_GET_LINE_ID 10019
+#define RIL_REQUEST_SET_LINE_ID 10020
+#define RIL_REQUEST_GET_SERIAL_NUMBER 10021
+#define RIL_REQUEST_GET_MANUFACTURE_DATE_NUMBER 10022
+#define RIL_REQUEST_GET_BARCODE_NUMBER 10023
+#define RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP 10024
+#define RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF 10025
+#define RIL_REQUEST_SIM_TRANSMIT_BASIC 10026
+#define RIL_REQUEST_SIM_OPEN_CHANNEL 10027
+#define RIL_REQUEST_SIM_CLOSE_CHANNEL 10028
+#define RIL_REQUEST_SIM_TRANSMIT_CHANNEL 10029
+#define RIL_REQUEST_SIM_AUTH 10030
+#define RIL_REQUEST_PS_ATTACH 10031
+#define RIL_REQUEST_PS_DETACH 10032
+#define RIL_REQUEST_ACTIVATE_DATA_CALL 10033
+#define RIL_REQUEST_CHANGE_SIM_PERSO 10034
+#define RIL_REQUEST_ENTER_SIM_PERSO 10035
+#define RIL_REQUEST_GET_TIME_INFO 10036
+#define RIL_REQUEST_OMADM_SETUP_SESSION 10037
+#define RIL_REQUEST_OMADM_SERVER_START_SESSION 10038
+#define RIL_REQUEST_OMADM_CLIENT_START_SESSION 10039
+#define RIL_REQUEST_OMADM_SEND_DATA 10040
+#define RIL_REQUEST_CDMA_GET_DATAPROFILE 10041
+#define RIL_REQUEST_CDMA_SET_DATAPROFILE 10042
+#define RIL_REQUEST_CDMA_GET_SYSTEMPROPERTIES 10043
+#define RIL_REQUEST_CDMA_SET_SYSTEMPROPERTIES 10044
+#define RIL_REQUEST_SEND_SMS_COUNT 10045
+#define RIL_REQUEST_SEND_SMS_MSG 10046
+#define RIL_REQUEST_SEND_SMS_MSG_READ_STATUS 10047
+#define RIL_REQUEST_MODEM_HANGUP 10048
+#define RIL_REQUEST_SET_SIM_POWER 10049
+#define RIL_REQUEST_SET_PREFERRED_NETWORK_LIST 10050
+#define RIL_REQUEST_GET_PREFERRED_NETWORK_LIST 10051
+#define RIL_REQUEST_HANGUP_VT 10052
+
+/* SAMSUNG RESPONSE */
+#define SAMSUNG_UNSOL_RESPONSE_BASE 11000
+
+#define RIL_UNSOL_RELEASE_COMPLETE_MESSAGE 11001
+#define RIL_UNSOL_STK_SEND_SMS_RESULT 11002
+#define RIL_UNSOL_STK_CALL_CONTROL_RESULT 11003
+#define RIL_UNSOL_DUN_CALL_STATUS 11004
+
+#define RIL_UNSOL_O2_HOME_ZONE_INFO 11007
+#define RIL_UNSOL_DEVICE_READY_NOTI 11008
+#define RIL_UNSOL_GPS_NOTI 11009
+#define RIL_UNSOL_AM 11010
+#define RIL_UNSOL_DUN_PIN_CONTROL_SIGNAL 11011
+#define RIL_UNSOL_DATA_SUSPEND_RESUME 11012
+#define RIL_UNSOL_SAP 11013
+
+#define RIL_UNSOL_SIM_SMS_STORAGE_AVAILALE 11015
+#define RIL_UNSOL_HSDPA_STATE_CHANGED 11016
+#define RIL_UNSOL_WB_AMR_STATE 11017
+#define RIL_UNSOL_TWO_MIC_STATE 11018
+#define RIL_UNSOL_DHA_STATE 11019
+#define RIL_UNSOL_UART 11020
+#define RIL_UNSOL_RESPONSE_HANDOVER 11021
+#define RIL_UNSOL_IPV6_ADDR 11022
+#define RIL_UNSOL_NWK_INIT_DISC_REQUEST 11023
+#define RIL_UNSOL_RTS_INDICATION 11024
+#define RIL_UNSOL_OMADM_SEND_DATA 11025
+#define RIL_UNSOL_DUN 11026
+#define RIL_UNSOL_SYSTEM_REBOOT 11027
+#define RIL_UNSOL_VOICE_PRIVACY_CHANGED 11028
+#define RIL_UNSOL_UTS_GETSMSCOUNT 11029
+#define RIL_UNSOL_UTS_GETSMSMSG 11030
+#define RIL_UNSOL_UTS_GET_UNREAD_SMS_STATUS 11031
+#define RIL_UNSOL_MIP_CONNECT_STATUS 11032
 
 /***********************************************************************/
 
