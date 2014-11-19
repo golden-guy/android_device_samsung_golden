@@ -389,7 +389,7 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             case RIL_REQUEST_SIGNAL_STRENGTH: ret =  responseSignalStrength(p); break;
             case RIL_REQUEST_VOICE_REGISTRATION_STATE: ret =  responseStrings(p); break;
             case RIL_REQUEST_DATA_REGISTRATION_STATE: ret =  responseStrings(p); break;
-            case RIL_REQUEST_OPERATOR: ret =  responseStrings(p); break;
+            case RIL_REQUEST_OPERATOR: ret =  operatorCheck(p); break;
             case RIL_REQUEST_RADIO_POWER: ret =  responseVoid(p); break;
             case RIL_REQUEST_DTMF: ret =  responseVoid(p); break;
             case RIL_REQUEST_SEND_SMS: ret =  responseSMS(p); break;
@@ -669,6 +669,18 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
                 if (RILJ_LOGD) samsungUnsljLogRet(response, ret);
                 break;
         }
+    }
+
+    // CDMA FIXES, this fixes bogus values in nv/sim on d2/jf/t0 cdma family or bogus information from sim card
+    private Object
+    operatorCheck(Parcel p) {
+        String response[] = (String[])responseStrings(p);
+        for(int i=0; i<2; i++) {
+            if (response[i]!= null) {
+                response[i] = Operators.operatorReplace(response[i]);
+            }
+        }
+        return response;
     }
 
     static String
