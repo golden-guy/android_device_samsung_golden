@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "camera/CameraParametersExtraDurationTimer.h"
+
 #define CAMERA_PARAMETERS_EXTRA_C \
 const char CameraParameters::SCENE_MODE_AQUA[] = "aqua"; \
 const char CameraParameters::SCENE_MODE_BACKLIGHT[] = "backlight"; \
@@ -27,7 +29,8 @@ const char CameraParameters::PIXEL_FORMAT_YVU422P[] = "yvu422p"; \
 const char CameraParameters::PIXEL_FORMAT_YVU420SP[] = "yvu420sp"; \
 const char CameraParameters::PIXEL_FORMAT_YVU420P[]  = "yvu420p"; \
 const char CameraParameters::KEY_RECORD_STRIDE[] = "record-stride"; \
-const char CameraParameters::KEY_RECORD_SLICE_HEIGHT[] = "record-slice-height";
+const char CameraParameters::KEY_RECORD_SLICE_HEIGHT[] = "record-slice-height"; \
+CAMERA_PARAMETERS_EXTRA_C_DURATION_TIMER \
 
 #define CAMERA_PARAMETERS_EXTRA_H \
     static const char SCENE_MODE_AQUA[]; \
