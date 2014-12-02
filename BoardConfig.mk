@@ -102,7 +102,7 @@ BOARD_BLUEDROID_VENDOR_CONF := device/samsung/golden/bluetooth/btvendor_golden.t
 
 # RIL
 BOARD_RIL_CLASS := ../../../device/samsung/golden/ril/
-TARGET_USES_LOGD := false
+BOARD_NEEDS_SEC_RIL_WORKAROUND := true
 
 # Browser
 ENABLE_WEBGL := true
