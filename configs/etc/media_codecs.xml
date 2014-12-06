@@ -16,10 +16,12 @@
 
 <!--
 <!DOCTYPE MediaCodecs [
-<!ELEMENT MediaCodecs (Decoders,Encoders)>
-<!ELEMENT Decoders (MediaCodec*)>
-<!ELEMENT Encoders (MediaCodec*)>
-<!ELEMENT MediaCodec (Type*,Quirk*)>
+<!ELEMENT Include EMPTY>
+<!ATTLIST Include href CDATA #REQUIRED>
+<!ELEMENT MediaCodecs (Decoders|Encoders|Include)*>
+<!ELEMENT Decoders (MediaCodec|Include)*>
+<!ELEMENT Encoders (MediaCodec|Include)*>
+<!ELEMENT MediaCodec (Type|Quirk|Include)*>
 <!ATTLIST MediaCodec name CDATA #REQUIRED>
 <!ATTLIST MediaCodec type CDATA>
 <!ELEMENT Type EMPTY>
@@ -76,6 +78,8 @@ Only the three quirks included above are recognized at this point:
 -->
 
 <MediaCodecs>
+    <Include href="media_codecs_google_audio.xml" />
+    <Include href="media_codecs_google_telephony.xml" />
     <Decoders>
 
 <!-- Video decoders -->
@@ -124,4 +128,5 @@ Only the three quirks included above are recognized at this point:
         </MediaCodec>
 
     </Encoders>
+    <Include href="media_codecs_google_video.xml" />
 </MediaCodecs>
