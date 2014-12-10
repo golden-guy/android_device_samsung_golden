@@ -61,9 +61,9 @@ __BEGIN_DECLS
 #define AUDIO_DEVICE_API_VERSION_2_0 HARDWARE_DEVICE_API_VERSION(2, 0)
 #define AUDIO_DEVICE_API_VERSION_3_0 HARDWARE_DEVICE_API_VERSION(3, 0)
 #ifndef ICS_AUDIO_BLOB
-#define AUDIO_DEVICE_API_VERSION_CURRENT AUDIO_DEVICE_API_VERSION_3_0
+#define AUDIO_DEVICE_API_VERSION_CURRENT AUDIO_DEVICE_API_VERSION_2_0
 /* Minimal audio HAL version supported by the audio framework */
-#define AUDIO_DEVICE_API_VERSION_MIN AUDIO_DEVICE_API_VERSION_2_0
+#define AUDIO_DEVICE_API_VERSION_MIN AUDIO_DEVICE_API_VERSION_1_0
 #else
 #define AUDIO_DEVICE_API_VERSION_CURRENT AUDIO_DEVICE_API_VERSION_1_0
 #define AUDIO_DEVICE_API_VERSION_MIN AUDIO_DEVICE_API_VERSION_1_0
@@ -734,7 +734,7 @@ struct audio_hw_device {
     void (*close_output_stream)(struct audio_hw_device *dev,
                                 struct audio_stream_out* stream_out);
 
-#if defined (QCOM_HARDWARE)
+#if defined (QCOM_HARDWARE) || defined (STE_SAMSUNG_HARDWARE)
     /** This method creates and opens the audio hardware output
      *  for broadcast stream */
     int (*open_broadcast_stream)(struct audio_hw_device *dev, uint32_t devices,
