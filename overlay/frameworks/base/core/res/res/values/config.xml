@@ -130,4 +130,6 @@
          off until the normal polling interval. A value < 0 indicates infinite. -->
     <integer name="config_ntpRetry">-1</integer>
 
+    <!-- omni additions -->
+    <bool name="config_offscreenGestureSupport">true</bool>
 </resources>
