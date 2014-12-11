@@ -138,7 +138,8 @@ BOARD_SEPOLICY_UNION += \
     orientationd.te \
     system.te \
     vold.te \
-    wpa_supplicant.te
+    wpa_supplicant.te \
+    zygote.te
 
 # Recovery
 TARGET_RECOVERY_FSTAB := device/samsung/golden/rootdir/fstab.samsunggolden

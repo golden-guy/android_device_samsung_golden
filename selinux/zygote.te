@@ -1,0 +1,2 @@
+# zygote
+allow zygote cpuctl_device:dir { search };
