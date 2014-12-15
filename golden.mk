@@ -33,8 +33,7 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/init.environ.rc:root/init.environ.rc \
     $(LOCAL_PATH)/rootdir/ueventd.samsunggolden.rc:root/ueventd.samsunggolden.rc \
     $(LOCAL_PATH)/rootdir/init.samsunggolden.usb.rc:root/init.samsunggolden.usb.rc \
-    $(LOCAL_PATH)/rootdir/fstab.samsunggolden:root/fstab.samsunggolden \
-    $(LOCAL_PATH)/rootdir/lpm.rc:root/lpm.rc
+    $(LOCAL_PATH)/rootdir/fstab.samsunggolden:root/fstab.samsunggolden
 
 # Recovery ramdisk, libraries and modules.
 PRODUCT_COPY_FILES += \
@@ -162,7 +161,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Charger
 PRODUCT_PACKAGES += \
-    charger \
     charger_res_images
 
 # Permissions
