@@ -93,6 +93,7 @@ WIFI_DRIVER_MODULE_NAME := "dhd"
 WIFI_DRIVER_MODULE_ARG := "firmware_path=/system/etc/wifi/bcmdhd_sta.bin nvram_path=/system/etc/wifi/nvram_net.txt"
 WIFI_DRIVER_MODULE_AP_ARG := "firmware_path=/system/etc/wifi/bcmdhd_apsta.bin nvram_path=/system/etc/wifi/nvram_net.txt"
 BOARD_NO_APSME_ATTR := true
+BOARD_NO_WIFI_HAL := true
 
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
