@@ -734,7 +734,7 @@ struct audio_hw_device {
     void (*close_output_stream)(struct audio_hw_device *dev,
                                 struct audio_stream_out* stream_out);
 
-#if defined (QCOM_HARDWARE) || defined (STE_SAMSUNG_HARDWARE)
+#if defined (QCOM_HARDWARE)
     /** This method creates and opens the audio hardware output
      *  for broadcast stream */
     int (*open_broadcast_stream)(struct audio_hw_device *dev, uint32_t devices,
