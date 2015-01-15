@@ -1,0 +1,20 @@
+on early-init
+    start ueventd
+    write /sys/class/power_supply/battery/batt_lp_charging 1
+
+on init
+
+sysclktz 0
+
+on boot
+    # set cpu governor to powersave while in charging mode
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
+
+    class_start default
+
+## Daemon processes to be run by init.
+##
+service ueventd /sbin/ueventd
+    critical
+
+service battery_charger /charger
