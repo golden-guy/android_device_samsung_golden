@@ -46,6 +46,9 @@ on init
     # Prevents permission denied error for telephony
     chmod 0644 /proc/cmdline
 
+on charger
+    write /sys/class/power_supply/battery/batt_lp_charging 1
+
 on fs
     mount_all /fstab.samsunggolden
     setprop ro.crypto.fuse_sdcard true
@@ -430,6 +433,11 @@ on boot
     # Modem
     class_start modem
     class_start default
+
+service charger /sbin/charger
+    class charger
+    critical
+    seclabel u:r:healthd:s0
 
 service ril-daemon /system/bin/rild
     class main
