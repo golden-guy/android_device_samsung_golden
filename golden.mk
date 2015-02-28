@@ -207,6 +207,10 @@ PRODUCT_PACKAGES += \
     OmniTorch \
     com.android.future.usb.accessory
 
+# set SELinux property value
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.build.selinux=1
+
 # Non-device-specific props
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.com.google.locationfeatures=1 \
