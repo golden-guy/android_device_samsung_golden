@@ -149,6 +149,7 @@ __BEGIN_DECLS
  * Return a valid source (positive integer) or AUDIO_HW_SYNC_INVALID if an error occurs
  * or no HW sync source is used. */
 #define AUDIO_PARAMETER_STREAM_HW_AV_SYNC "hw_av_sync"
+#define AUDIO_PARAMETER_HW_AV_SYNC "hw_av_sync"
 
 /**
  * audio codec parameters
