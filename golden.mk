@@ -140,6 +140,7 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/etc/asound.conf:system/etc/asound.conf
 PRODUCT_PACKAGES += \
     audio.a2dp.default \
+    audio.r_submix.default \
     audio.usb.default \
     libasound
 
