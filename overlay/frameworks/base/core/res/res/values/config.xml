@@ -102,6 +102,9 @@
     -->
     <integer name="config_longPressOnHomeBehavior">1</integer>
 
+    <!-- Set Home Button Wake Support as a persistent behaviour. -->
+    <bool name="config_persistHomeWakeSupport">true</bool>
+
     <!-- Screen brightness used to dim the screen when the user activity
          timeout expires.  May be less than the minimum allowed brightness setting
          that can be set by the user. -->
