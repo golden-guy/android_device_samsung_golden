@@ -355,6 +355,15 @@ on boot
     chown audio audio /sys/devices/system/cpu/usecase/low-power-audio
     chown system radio /proc/dump_enable
 
+    # Permission for cpufreq Performance Control
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+
+    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+
     # Permission for gpio_keys
     chown radio system /sys/devices/platform/gpio-keys.0/wakeup_keys
     write /sys/devices/platform/gpio-keys.0/wakeup_keys 172
