@@ -53,6 +53,7 @@
 #define NUM_BUFFERS 2
 
 typedef struct {
+    int type;
     GGLSurface texture;
     unsigned cwidth;
     unsigned cheight;
@@ -289,6 +290,23 @@ unsigned int gr_get_height(gr_surface surface) {
         return 0;
     }
     return ((GGLSurface*) surface)->height;
+}
+
+void gr_freeFont(void *font)
+{
+    GRFont *f = font;
+    free(f->texture.data);
+    free(f);
+}
+
+int gr_getMaxFontHeight(void *font)
+{
+    GRFont *fnt = (GRFont*) font;
+
+    if (!fnt)   fnt = gr_font;
+    if (!fnt)   return -1;
+
+    return fnt->cheight;
 }
 
 static void gr_init_font(void)

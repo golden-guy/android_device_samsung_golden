@@ -56,6 +56,7 @@
 // #define PRINT_SCREENINFO 1 // Enables printing of screen info to log
 
 typedef struct {
+    int type;
     GGLSurface texture;
     unsigned offset[97];
     unsigned cheight;
@@ -620,6 +621,23 @@ int gr_getFontDetails(void* font, unsigned* cheight, unsigned* maxwidth)
         }
     }
     return 0;
+}
+
+void gr_freeFont(void *font)
+{
+    GRFont *f = font;
+    free(f->texture.data);
+    free(f);
+}
+
+int gr_getMaxFontHeight(void *font)
+{
+    GRFont *fnt = (GRFont*) font;
+
+    if (!fnt)   fnt = gr_font;
+    if (!fnt)   return -1;
+
+    return fnt->cheight;
 }
 
 static void gr_init_font(void)
