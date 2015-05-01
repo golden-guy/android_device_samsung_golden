@@ -88,7 +88,7 @@
     <integer name="config_deviceHardwareKeys">7</integer>
 
     <!-- Boolean indicating whether we want button brightness support -->
-    <!-- <bool name="config_button_brightness_support">true</bool> -->
+    <bool name="config_button_brightness_support">true</bool>
 
     <!-- Boolean to enable stk functionality on Samsung phones -->
     <bool name="config_samsung_stk">true</bool>
