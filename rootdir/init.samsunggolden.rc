@@ -446,7 +446,6 @@ on boot
 service charger /sbin/charger
     class charger
     critical
-    seclabel u:r:healthd:s0
 
 service ril-daemon /system/bin/rild
     class main
