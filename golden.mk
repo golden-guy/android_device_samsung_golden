@@ -220,7 +220,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.config.sync=yes \
     ro.config.ntp.server_poll=86400000 \
     ro.config.ntp.clock_sync=1800000 \
-    ro.config.ntp.sync_mode=3
+    ro.config.ntp.sync_mode=3 \
+    fw.appops.sys_app=true
 
 # Define kind of DPI
 PRODUCT_AAPT_CONFIG := normal hdpi
