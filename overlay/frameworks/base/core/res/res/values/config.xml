@@ -110,6 +110,9 @@
          that can be set by the user. -->
     <integer name="config_screenBrightnessDim">20</integer>
 
+<!-- If this is true, key chords can be used to take a screen record on the device. -->
+    <bool name="config_enableScreenrecordChord">false</bool>
+
    <!-- Package name(s) containing location provider support.
          These packages can contain services implementing location providers,
          such as the Geocode Provider, Network Location Provider, and
