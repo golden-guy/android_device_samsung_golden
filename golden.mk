@@ -221,7 +221,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.config.ntp.server_poll=86400000 \
     ro.config.ntp.clock_sync=1800000 \
     ro.config.ntp.sync_mode=3 \
-    fw.appops.sys_app=true
+    fw.appops.sys_app=true \
+    android.webview.force_aosp=false
 
 # Define kind of DPI
 PRODUCT_AAPT_CONFIG := normal
