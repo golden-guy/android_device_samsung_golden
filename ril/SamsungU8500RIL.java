@@ -37,6 +37,7 @@ import android.os.Parcel;
 import android.os.SystemProperties;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.SignalStrength;
+import android.telephony.TelephonyManager;
 import static com.android.internal.telephony.RILConstants.*;
 
 import com.android.internal.telephony.CommandException;
@@ -58,7 +59,9 @@ import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.AsyncResult;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -75,7 +78,6 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.text.TextUtils;
 import android.telephony.Rlog;
-
 
 import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
@@ -181,12 +183,15 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
     protected HandlerThread mSamsungu8500RILThread;
     protected ConnectivityHandler mSamsungu8500RILHandler;
+    private TelephonyManager mTelephonyManager;
+    private Context mContext;
     private boolean mSignalbarCount = SystemProperties.getInt("ro.telephony.sends_barcount", 0) == 1 ? true : false;
     private boolean mIsSamsungCdma = SystemProperties.getBoolean("ro.ril.samsung_cdma", false);
 
     public SamsungU8500RIL(Context context, int networkMode, int cdmaSubscription, Integer instanceId) {
         super(context, networkMode, cdmaSubscription);
         mQANElements = 5;
+        mContext = context;
     }
 
     static String
@@ -217,6 +222,18 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
                 ni_active.isConnected() && cm.getMobileDataEnabled();
     }
 
+    private boolean hasNetworkTypeChanged(int networkType)
+    {
+        mTelephonyManager = (TelephonyManager)mContext.getSystemService(Context.TELEPHONY_SERVICE);
+        int networkClass = mTelephonyManager.getNetworkClass(mTelephonyManager.getNetworkType());
+
+        Rlog.d(RILJ_LOG_TAG, "networkType: " + networkType);
+        Rlog.d(RILJ_LOG_TAG, "networkClass: " + networkClass);
+
+        return mTelephonyManager != null &&
+                !((networkType == networkClass) || (networkType == 0 && networkClass == 2));
+    }
+
     @Override
     public void setPreferredNetworkType(int networkType , Message response) {
         /* Samsung modem implementation does bad things when a datacall is running
@@ -235,9 +252,15 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
                 mSamsungu8500RILThread.start();
 
                 looper = mSamsungu8500RILThread.getLooper();
-                mSamsungu8500RILHandler = new ConnectivityHandler(mContext, looper);
+
+                if (looper != null) {
+                    mSamsungu8500RILHandler = new ConnectivityHandler(mContext, looper);
+                }
             }
-            mSamsungu8500RILHandler.setPreferedNetworkType(networkType, response);
+            if (hasNetworkTypeChanged(networkType))
+            {
+                mSamsungu8500RILHandler.setPreferedNetworkType(networkType, response);
+            }
         } else {
             if (mSamsungu8500RILHandler != null) {
                 mSamsungu8500RILThread = null;
@@ -272,9 +295,11 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
         private static final int MESSAGE_SET_PREFERRED_NETWORK_TYPE = 30;
         private Context mContext;
         private int mDesiredNetworkType;
+        private boolean isRegistered = false;
         //the original message, we need it for calling back the original caller when done
         private Message mNetworktypeResponse;
-        private ConnectivityBroadcastReceiver mConnectivityReceiver =  new ConnectivityBroadcastReceiver();
+        private ConnectivityBroadcastReceiver mConnectivityReceiver;
+        private ConnectivityManager.NetworkCallback networkCallback;
 
         public ConnectivityHandler(Context context, Looper looper)
         {
@@ -283,41 +308,40 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
         }
 
         private void startListening() {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-            mContext.registerReceiver(mConnectivityReceiver, filter);
+            if (!isRegistered) {
+                IntentFilter filter = new IntentFilter();
+                filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+                mConnectivityReceiver = new ConnectivityBroadcastReceiver();
+                mContext.registerReceiver(mConnectivityReceiver, filter);
+                registerConnectivityActionCallback();
+                isRegistered = true;
+            }
         }
 
         private synchronized void stopListening() {
-            mContext.unregisterReceiver(mConnectivityReceiver);
+            if (isRegistered) {
+                mContext.unregisterReceiver(mConnectivityReceiver);
+                unregisterConnectivityActionCallback();
+                isRegistered = false;
+            }
         }
 
-	private void setMobileDataEnabled(Context context, boolean enabled) {
-	    try {
+        private void setMobileDataEnabled(Context context, boolean enabled) {
+            try {
 
-	        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-	        final Class conmanClass = Class.forName(conman.getClass().getName());
-	        final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
-	        iConnectivityManagerField.setAccessible(true);
-	        final Object iConnectivityManager = iConnectivityManagerField.get(conman);
-	        final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
-	        final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-	        setMobileDataEnabledMethod.setAccessible(true);
+                mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                mTelephonyManager.setDataEnabled(enabled);
 
-	        setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         public void setPreferedNetworkType(int networkType, Message response)
         {
-            Rlog.d(RILJ_LOG_TAG, "Mobile Dataconnection is online setting it down");
+            Rlog.d(RILJ_LOG_TAG, "Mobile Dataconnection is online, setting it down");
             mDesiredNetworkType = networkType;
             mNetworktypeResponse = response;
-            //ConnectivityManager cm =
-            //    (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
             //start listening for the connectivity change broadcast
             startListening();
             setMobileDataEnabled(mContext, false);
@@ -328,10 +352,7 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             switch(msg.what) {
             //networktype was set, now we can enable the dataconnection again
             case MESSAGE_SET_PREFERRED_NETWORK_TYPE:
-                //ConnectivityManager cm =
-                //    (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-                Rlog.d(RILJ_LOG_TAG, "preferred NetworkType set upping Mobile Dataconnection");
+                Rlog.d(RILJ_LOG_TAG, "preferred NetworkType set, now enabling Mobile Dataconnection");
                 setMobileDataEnabled(mContext, true);
                 //everything done now call back that we have set the networktype
                 AsyncResult.forMessage(mNetworktypeResponse, null, null);
@@ -349,7 +370,7 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (!action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
-                    Rlog.w(RILJ_LOG_TAG, "onReceived() called with " + intent);
+                    Rlog.w(RILJ_LOG_TAG, "onReceive() called with " + intent);
                     return;
                 }
                 boolean noConnectivity =
@@ -357,12 +378,35 @@ public class SamsungU8500RIL extends RIL implements CommandsInterface {
 
                 if (noConnectivity) {
                     //Ok dataconnection is down, now set the networktype
-                    Rlog.w(RILJ_LOG_TAG, "Mobile Dataconnection is now down setting preferred NetworkType");
+                    Rlog.w(RILJ_LOG_TAG, "Mobile Dataconnection is now down, setting preferred NetworkType");
                     stopListening();
                     sendPreferedNetworktype(mDesiredNetworkType, obtainMessage(MESSAGE_SET_PREFERRED_NETWORK_TYPE));
                     mDesiredNetworkType = -1;
                 }
             }
+        }
+
+        private void registerConnectivityActionCallback() {
+            ConnectivityManager cm =
+                (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkRequest.Builder builder = new NetworkRequest.Builder();
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+
+                @Override
+                public void onLost(Network network) {
+                    Intent intent = new Intent(ConnectivityManager.CONNECTIVITY_ACTION);
+                    intent.putExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, true);
+                    mContext.sendBroadcast(intent);
+                }
+
+            };
+            cm.registerNetworkCallback(builder.build(), networkCallback);
+        }
+
+        private void unregisterConnectivityActionCallback() {
+            ConnectivityManager cm =
+                (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+            cm.unregisterNetworkCallback(networkCallback);
         }
     }
 
