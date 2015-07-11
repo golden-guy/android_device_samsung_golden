@@ -38,5 +38,10 @@
     <!-- Doze: shake accelerometer threshold -->
     <integer name="doze_shake_accelerometer_threshold">10</integer>
 
+    <!-- The default tiles to display in QuickSettings -->
+    <string name="quick_settings_tiles_default" translatable="false">
+        wifi,bt,cell,airplane,rotation,flashlight,location,hotspot
+    </string>
+
 </resources>
 
