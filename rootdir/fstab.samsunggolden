@@ -15,6 +15,9 @@
 # Vold managed volumes (External SDCard)
 /devices/sdi0/mmc_host/mmc1/mmc1*	auto  vfat  defaults  wait,voldmanaged=sdcard1:auto,noemulatedsd
 
+# zRAM (256M)
+/dev/block/zram0		none				swap		defaults		zramsize=268435456
+
 # Recovery
 /dev/block/mmcblk0p20		/boot				emmc		defaults		recoveryonly
 /dev/block/mmcblk0p21		/recovery			emmc		defaults		recoveryonly
