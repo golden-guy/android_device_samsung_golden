@@ -121,9 +121,6 @@ BOARD_LPM_BOOT_ARGUMENT_NAME := lpm_boot
 BOARD_LPM_BOOT_ARGUMENT_VALUE := 1
 BOARD_CHARGER_RES := device/samsung/golden/res/charger
 
-#Security patch level
-PLATFORM_SECURITY_PATCH := 2015-11-01
-
 # SELinux
 HAVE_SELINUX := true
 BOARD_SEPOLICY_DIRS += device/samsung/golden/sepolicy
